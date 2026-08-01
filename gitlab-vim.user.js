@@ -929,8 +929,17 @@
         // ブラウザ/GitLab 側のショートカットを奪わない。Shift だけは ":" のために許容する
         if (e.ctrlKey || e.altKey || e.metaKey) return;
 
-        // パレット表示中はパレット自身のハンドラに任せる
-        if (paletteState.open) return;
+        // パレット表示中はパレット自身のハンドラに任せる。
+        // ただし Escape だけはここでも処理する。Vimium 等の拡張が insert モードの Esc を
+        // 横取りして input を blur した後でも、もう一度 Esc を押せば閉じられるようにするため
+        if (paletteState.open) {
+            if (e.key === "Escape") {
+                closePalette();
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            return;
+        }
 
         // GitLab はリッチテキストエディタやフィルタ入力だらけなので、編集対象では一切横取りしない
         if (isEditableTarget(e.target)) return;

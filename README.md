@@ -96,6 +96,25 @@ self-managed の GitLab で使いたい場合は、スクリプト冒頭のメ�
 
 API はスクリプトを動かしているホスト自身 (`location.origin`) の `/api/v4` を叩くため、`@match` を足す以外の設定は要らない。🔌
 
+## 🧩 Vimium との共存
+
+Vimium (Vimium C も同様) は拡張機能としてページより先にキー入力を受け取り、マップ済みのキーはそこで止める。🚧
+そのため Vimium 側で `j` などをマップしていると、本スクリプトにはキーが届かない。
+これは userscript 側では回避できないため、Vimium の設定 (Options → Excluded URLs and keys) で対象ホストのキーを素通しさせる。🔧
+
+| Patterns | Passed keys |
+|---|---|
+| `https?://gitlab.com/*` | `jkhly` |
+
+self-managed のホストを使う場合は同じ Passed keys で行を追加する。✍️
+`:` は Vimium が既定でマップしていないので登録不要。
+`o` を Vimium のリンクヒントに残す場合でも、フォーカス中の行は Enter / Ctrl+Enter (ブラウザ標準) で開ける。↩️
+`o` を本スクリプトに譲るなら Passed keys に `o` を足す。
+`y` を素通しさせると、そのホストでは Vimium の `yy` (URL コピー) が効かなくなる。⚖️
+
+Vimium はフォーカス中の入力欄で押した Esc を横取りして blur だけを行う。
+そのため Vimium 併用時にパレットを Esc で閉じるには 2 回押す (1 回目で入力欄が blur、2 回目でパレットが閉じる)。🚪🚪
+
 ## 🧠 設計メモ
 
 ### 🎯 data-testid を手がかりにする
