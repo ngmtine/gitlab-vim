@@ -930,13 +930,14 @@
         if (e.ctrlKey || e.altKey || e.metaKey) return;
 
         // パレット表示中はパレット自身のハンドラに任せる。
-        // ただし Escape だけはここでも処理する。Vimium 等の拡張が insert モードの Esc を
-        // 横取りして input を blur した後でも、もう一度 Esc を押せば閉じられるようにするため
+        // ただし Vimium 等の拡張が insert モードの Esc を横取りして input を blur した後は、
+        // フォーカスがパレット外に出てイベントが root まで届かなくなる。
+        // その状態でも操作を継続できるよう、フォーカスを input に戻したうえで
+        // パレットのキー処理をここから直接呼ぶ (文字はフォーカス復帰後の input に入る)
         if (paletteState.open) {
-            if (e.key === "Escape") {
-                closePalette();
-                e.preventDefault();
-                e.stopPropagation();
+            if (paletteState.root && !paletteState.root.contains(e.target)) {
+                paletteState.input.focus();
+                onPaletteKeyDown(e);
             }
             return;
         }
