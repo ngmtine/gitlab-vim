@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitLab Vim Navigation
 // @namespace    https://github.com/ngmtine
-// @version      0.1.0
+// @version      0.1.1
 // @description  GitLab を vim ライクなキーバインドで操作する (j/k ナビ・検索パレット・yy/yb コピー)
 // @match        https://gitlab.com/*
 // @match        https://gitlab.firstloop-tech.com/*
@@ -807,6 +807,19 @@
         root.addEventListener("mousedown", (e) => {
             if (e.target === root) closePalette();
         });
+        // パネル内のクリックで input が blur すると focusout がパレットを閉じてしまうため、
+        // input 以外への mousedown は既定のフォーカス移動を抑止する (click 自体は発火する)
+        panel.addEventListener("mousedown", (e) => {
+            if (e.target !== input) e.preventDefault();
+        });
+        // Vimium 等の拡張は insert モードの Esc を横取りして blur だけを行い、キーはページに届かない。
+        // input がフォーカスを失った時点でパレットを閉じることで、その場合も Esc 1 回で閉じる
+        // (開いたままフォーカスだけ外れて操作不能になる状態を作らない)
+        input.addEventListener("focusout", (e) => {
+            if (!paletteState.open) return;
+            if (e.relatedTarget instanceof Node && root.contains(e.relatedTarget)) return;
+            closePalette();
+        });
         input.addEventListener("input", scheduleSearch);
         // バブリングで受けて止める。キャプチャで止めると input 自身にイベントが届かなくなる
         root.addEventListener("keydown", onPaletteKeyDown);
@@ -930,14 +943,12 @@
         if (e.ctrlKey || e.altKey || e.metaKey) return;
 
         // パレット表示中はパレット自身のハンドラに任せる。
-        // ただし Vimium 等の拡張が insert モードの Esc を横取りして input を blur した後は、
-        // フォーカスがパレット外に出てイベントが root まで届かなくなる。
-        // その状態でも操作を継続できるよう、フォーカスを input に戻したうえで
-        // パレットのキー処理をここから直接呼ぶ (文字はフォーカス復帰後の input に入る)
+        // 通常は input の focusout でパレットが閉じるため、ここでの Escape 処理は保険
         if (paletteState.open) {
-            if (paletteState.root && !paletteState.root.contains(e.target)) {
-                paletteState.input.focus();
-                onPaletteKeyDown(e);
+            if (e.key === "Escape") {
+                closePalette();
+                e.preventDefault();
+                e.stopPropagation();
             }
             return;
         }
